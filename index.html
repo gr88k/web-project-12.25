@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Countries</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/index.css">
+</head>
+<body>
+    <div class="container">
+        <header class="main-header">
+            <h1>Countries</h1>
+            <p class="subtitle">Explore country information</p>
+        </header>
+
+        <div class="filters-panel">
+            <div class="filters-grid">
+                <div class="form-group">
+                    <label class="form-label">Search</label>
+                    <input type="text" class="form-input" id="search" placeholder="Country name">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Region</label>
+                    <select class="form-select" id="region">
+                        <option value="">All</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Population</label>
+                    <div class="range-inputs">
+                        <input type="number" class="form-input" id="popMin" placeholder="Min">
+                        <input type="number" class="form-input" id="popMax" placeholder="Max">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Area (km²)</label>
+                    <div class="range-inputs">
+                        <input type="number" class="form-input" id="areaMin" placeholder="Min">
+                        <input type="number" class="form-input" id="areaMax" placeholder="Max">
+                    </div>
+                </div>
+            </div>
+            <div class="filter-stats" id="stats">
+                Loading...
+            </div>
+        </div>
+
+        <div id="countries-container">
+            <div class="loading">Loading countries...</div>
+        </div>
+
+        <div class="pagination" id="pagination"></div>
+    </div>
+
+    <script src="js/common.js"></script>
+    <script>
+        const API_BASE_URL = 'http://localhost:8000';
+        const ITEMS_PER_PAGE = 12;
+        
+        let allCountries = [];
+        let filteredCountries = [];
+        let currentPage = 1;
+        let regions = [];
+        
+        document.addEventListener('DOMContentLoaded', loadCountries);
+        
+        async function loadCountries() {
+            showLoading('countries-container', 'Loading...');
+            
+            try {
+                const data = await fetchData(API_BASE_URL + '/countries');
+                allCountries = data;
+                filteredCountries = [...data];
+                
+                regions = [...new Set(data.map(c => c.region))].filter(r => r);
+                
+                updateRegionFilter();
+                updateStats();
+                renderCountries();
+                setupFilters();
+                
+            } catch (error) {
+                showError('countries-container', 'Error loading data', true);
+            }
+        }
+        
+        function updateRegionFilter() {
+            const regionSelect = document.getElementById('region');
+            regionSelect.innerHTML = `
+                <option value="">All</option>
+                ${regions.map(region => `<option value="${region}">${region}</option>`).join('')}
+            `;
+        }
+        
+        function updateStats() {
+            const stats = document.getElementById('stats');
+            stats.textContent = filteredCountries.length + ' of ' + allCountries.length + ' countries';
+        }
+        
+        function setupFilters() {
+            const searchInput = document.getElementById('search');
+            const regionSelect = document.getElementById('region');
+            const popMin = document.getElementById('popMin');
+            const popMax = document.getElementById('popMax');
+            const areaMin = document.getElementById('areaMin');
+            const areaMax = document.getElementById('areaMax');
+            
+            let searchTimeout;
+            searchInput.addEventListener('input', () => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(applyFilters, 300);
+            });
+            
+            regionSelect.addEventListener('change', applyFilters);
+            popMin.addEventListener('input', applyFilters);
+            popMax.addEventListener('input', applyFilters);
+            areaMin.addEventListener('input', applyFilters);
+            areaMax.addEventListener('input', applyFilters);
+        }
+        
+        function applyFilters() {
+            const searchTerm = document.getElementById('search').value.toLowerCase();
+            const selectedRegion = document.getElementById('region').value;
+            const popMin = parseInt(document.getElementById('popMin').value) || 0;
+            const popMax = parseInt(document.getElementById('popMax').value) || 9999999999;
+            const areaMin = parseInt(document.getElementById('areaMin').value) || 0;
+            const areaMax = parseInt(document.getElementById('areaMax').value) || 9999999999;
+            
+            filteredCountries = allCountries.filter(country => {
+                const name = country.name?.common?.toLowerCase() || '';
+                
+                if (searchTerm && !name.includes(searchTerm)) return false;
+                if (selectedRegion && country.region !== selectedRegion) return false;
+                
+                const population = country.population || 0;
+                if (population < popMin || population > popMax) return false;
+                
+                const area = country.area || 0;
+                if (area < areaMin || area > areaMax) return false;
+                
+                return true;
+            });
+            
+            currentPage = 1;
+            updateStats();
+            renderCountries();
+        }
+        
+        function renderCountries() {
+            const container = document.getElementById('countries-container');
+            
+            if (filteredCountries.length === 0) {
+                container.innerHTML = `<div class="no-results">No countries found</div>`;
+                document.getElementById('pagination').innerHTML = '';
+                return;
+            }
+            
+            const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+            const endIndex = startIndex + ITEMS_PER_PAGE;
+            const pageCountries = filteredCountries.slice(startIndex, endIndex);
+            
+            container.innerHTML = `
+                <div class="countries-grid">
+                    ${pageCountries.map(country => `
+                        <div class="country-card">
+                            <div class="country-flag">${country.flag || '🏳️'}</div>
+                            <h3 class="country-name">${country.name?.common || 'Unknown'}</h3>
+                            
+                            <div class="country-info">
+                                <span class="info-label">Region:</span>
+                                <span class="info-value">${country.region || 'N/A'}</span>
+                            </div>
+                            
+                            <div class="country-info">
+                                <span class="info-label">Capital:</span>
+                                <span class="info-value">${country.capital?.[0] || 'N/A'}</span>
+                            </div>
+                            
+                            <div class="country-info">
+                                <span class="info-label">Area:</span>
+                                <span class="info-value">${formatArea(country.area)}</span>
+                            </div>
+                            
+                            <div class="country-info">
+                                <span class="info-label">Population:</span>
+                                <span class="info-value">${formatPopulation(country.population)}</span>
+                            </div>
+                            
+                            <button class="btn" onclick="window.location.href='country.html?code=${country.cca2 || country.cca3}'">
+                                Details
+                            </button>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            renderPagination();
+        }
+        
+        function renderPagination() {
+            const totalPages = Math.ceil(filteredCountries.length / ITEMS_PER_PAGE);
+            const pagination = document.getElementById('pagination');
+            
+            if (totalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+            
+            let buttons = '';
+            
+            if (currentPage > 1) {
+                buttons += `<button class="pagination-btn" onclick="changePage(${currentPage - 1})">←</button>`;
+            }
+            
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                    buttons += `
+                        <button class="pagination-btn ${currentPage === i ? 'active' : ''}" onclick="changePage(${i})">
+                            ${i}
+                        </button>
+                    `;
+                }
+            }
+            
+            if (currentPage < totalPages) {
+                buttons += `<button class="pagination-btn" onclick="changePage(${currentPage + 1})">→</button>`;
+            }
+            
+            pagination.innerHTML = buttons;
+        }
+        
+        function changePage(page) {
+            const totalPages = Math.ceil(filteredCountries.length / ITEMS_PER_PAGE);
+            if (page < 1 || page > totalPages) return;
+            
+            currentPage = page;
+            renderCountries();
+        }
+    </script>
+</body>
+</html>

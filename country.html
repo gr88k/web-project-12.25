@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Country Details</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/country.css">
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="btn" style="margin-bottom: 20px;">
+            ← Back to Countries
+        </a>
+
+        <div id="country-details">
+            <div class="loading">Loading...</div>
+        </div>
+    </div>
+
+    <script src="js/common.js"></script>
+    <script>
+        const countryCode = getUrlParam('code');
+        const API_BASE_URL = 'http://localhost:8000';
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!countryCode) {
+                showError('country-details', 'Country code not specified');
+                return;
+            }
+            loadCountryDetails(countryCode);
+        });
+        
+        async function loadCountryDetails(code) {
+            showLoading('country-details', 'Loading...');
+            
+            try {
+                const country = await fetchData(API_BASE_URL + '/countries/' + code);
+                renderCountryDetails(country);
+                
+            } catch (error) {
+                showError('country-details', 'Error loading country', true);
+            }
+        }
+        
+        function renderCountryDetails(country) {
+            const container = document.getElementById('country-details');
+            
+
+            const currencies = [];
+            if (country.currencies) {
+                for (const [code, info] of Object.entries(country.currencies)) {
+                    if (info && info.name) {
+                        currencies.push(info.name + ' (' + code + ')');
+                    }
+                }
+            }
+
+            const languages = [];
+            if (country.languages) {
+                for (const [code, name] of Object.entries(country.languages)) {
+                    languages.push(name);
+                }
+            }
+            
+            container.innerHTML = `
+                <div>
+                    <div class="country-header">
+                        <div class="country-flag">${country.flag || '🏳️'}</div>
+                        <h1 class="country-name">${country.name?.common || 'Unknown'}</h1>
+                        <div class="country-official">${country.name?.official || ''}</div>
+                        <div class="country-meta">
+                            <span class="country-code">${country.cca2 || country.cca3 || 'N/A'}</span>
+                            ${country.independent !== undefined ? 
+                                `<span class="badge ${country.independent ? 'badge-success' : 'badge-error'}">
+                                    ${country.independent ? 'Independent' : 'Not Independent'}
+                                </span>` : ''
+                            }
+                        </div>
+                    </div>
+                    
+                    <div class="country-info-grid">
+                        <div class="info-section">
+                            <h3>Basic Information</h3>
+                            <div class="info-item">
+                                <span class="info-label">Region</span>
+                                <span class="info-value">${country.region || 'N/A'}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Subregion</span>
+                                <span class="info-value">${country.subregion || 'N/A'}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Capital</span>
+                                <span class="info-value">${country.capital?.[0] || 'N/A'}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Population</span>
+                                <span class="info-value">${formatPopulation(country.population)}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Area</span>
+                                <span class="info-value">${formatArea(country.area)}</span>
+                            </div>
+                            ${country.latlng ? `
+                                <div class="info-item">
+                                    <span class="info-label">Coordinates</span>
+                                    <span class="info-value">${country.latlng[0]}, ${country.latlng[1]}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="info-section">
+                            <h3>Languages</h3>
+                            ${createTagsList(languages)}
+                        </div>
+                        
+                        <div class="info-section">
+                            <h3>Economy</h3>
+                            ${createTagsList(currencies)}
+                            ${country.idd?.root ? `
+                                <div class="info-item">
+                                    <span class="info-label">Calling Code</span>
+                                    <span class="info-value">${country.idd.root}${country.idd.suffixes?.[0] || ''}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="info-section">
+                            <h3>Geography</h3>
+                            ${country.borders?.length > 0 ? `
+                                <div class="info-item">
+                                    <span class="info-label">Borders</span>
+                                    <span class="info-value">${country.borders.length} countries</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Border Countries</span>
+                                    <span class="info-value">${country.borders.slice(0, 5).join(', ')}${country.borders.length > 5 ? '...' : ''}</span>
+                                </div>
+                            ` : ''}
+                            ${country.timezones?.length > 0 ? `
+                                <div class="info-item">
+                                    <span class="info-label">Timezones</span>
+                                    <span class="info-value"></span>
+                                </div>
+                                ${createTagsList(country.timezones)}
+                            ` : ''}
+                            <div class="info-item">
+                                <span class="info-label">Landlocked</span>
+                                <span class="info-value">${country.landlocked ? 'Yes' : 'No'}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

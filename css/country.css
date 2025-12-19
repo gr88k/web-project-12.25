@@ -1,0 +1,147 @@
+.country-header {
+    background: #1e293b;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #334155;
+    margin-bottom: 20px;
+}
+
+.country-flag {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.country-name {
+    font-size: 1.8rem;
+    margin-bottom: 5px;
+    text-align: center;
+}
+
+.country-official {
+    color: #94a3b8;
+    text-align: center;
+    margin-bottom: 15px;
+    font-style: italic;
+}
+
+.country-meta {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 15px;
+}
+
+.country-code {
+    background: #0f172a;
+    padding: 4px 12px;
+    border-radius: 4px;
+    color: #94a3b8;
+    font-size: 0.9rem;
+    border: 1px solid #334155;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.badge-success {
+    background: #065f46;
+    color: #a7f3d0;
+}
+
+.badge-error {
+    background: #7f1d1d;
+    color: #fecaca;
+}
+
+.badge-info {
+    background: #1e3a8a;
+    color: #dbeafe;
+}
+
+.country-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.info-section {
+    background: #1e293b;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #334155;
+}
+
+.info-section h3 {
+    color: #e2e8f0;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #334155;
+    font-size: 1.1rem;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #1e293b;
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    color: #94a3b8;
+    font-size: 0.9rem;
+}
+
+.info-value {
+    color: #e2e8f0;
+    text-align: right;
+    max-width: 200px;
+    word-break: break-word;
+}
+
+.tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.tag {
+    background: #0f172a;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    color: #cbd5e1;
+    border: 1px solid #334155;
+}
+
+@media (max-width: 768px) {
+    .country-info-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .info-item {
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .info-value {
+        text-align: left;
+    }
+    
+    .country-meta {
+        flex-direction: column;
+        align-items: center;
+    }
+}
